@@ -106,7 +106,7 @@ td{padding:8px 6px;border-bottom:1px solid #f5f5f5}
 </div>
 <div class="modal-overlay" id="searchOverlay" style="display:none;z-index:199;background:rgba(0,0,0,0.15)" onclick="closeSearch()"></div>
 <div class="search-popup" id="searchPopup"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><h4 style="margin:0">搜索结果</h4><button class="btn small" onclick="closeSearch()">关闭</button></div><div id="searchResults"></div></div>
-<div class="modal-overlay" id="dayPopup" style="display:none" onclick="if(event.target===this)this.style.display='none'"><div class="modal" style="max-width:600px;padding:32px"><div id="popupTitle"></div><button class="btn small" onclick="document.getElementById('dayPopup').style.display='none'" style="margin-top:10px">关闭</button></div></div>
+<div class="modal-overlay" id="dayPopup" style="display:none" onclick="if(event.target===this)this.style.display='none'"><div class="modal" style="max-width:600px;padding:32px;text-align:center"><div id="popupTitle" style="text-align:center"></div><button class="btn small" onclick="document.getElementById('dayPopup').style.display='none'" style="margin-top:10px">关闭</button></div></div>
 <div class="modal-overlay" id="modalOverlay" style="display:none" onclick="if(event.target===this)closeModal()"><div class="modal" id="modal"><h3 id="modalTitle">添加日程</h3>
 <label>来访者姓名</label><input type="text" id="apptName" placeholder="例如：张三" onchange="autoFillBase()">
 <label>日期</label><input type="date" id="apptDate">
