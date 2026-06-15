@@ -1,0 +1,28 @@
+{
+  "name": "咨询师日程助手",
+  "short_name": "日程助手",
+  "description": "咨询师日程管理工具，支持来访预约、日程统计与云端同步",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "background_color": "#ede9e2",
+  "theme_color": "#4a7c65",
+  "lang": "zh-CN",
+  "orientation": "portrait-primary",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    {
+      "src": "icon_192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon_512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
