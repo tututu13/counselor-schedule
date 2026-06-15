@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>咨询师日程</title>
+<style>
+:root{--bg:#f5f3ef;--card:#fff;--text:#1a1814;--muted:#8b8578;--accent:#4a7c65;--accent-light:#eaf5ef;--new:#008920;--fixed:#FFBA20;--course:#FF3380;--lecture:#305FFF;--other:#FF6C00;--grid-border:#e6e2da}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,"SF Pro Text","PingFang SC",sans-serif;background:#ede9e2;color:var(--text);padding:0}
+.app{max-width:1140px;margin:0 auto;padding:20px}
+header{display:flex;justify-content:space-between;align-items:center;padding:18px 24px;background:var(--card);border-radius:12px;margin-bottom:18px;border:1px solid var(--grid-border)}
+h1{font-size:21px;font-weight:700}h1 span{font-weight:400;color:var(--muted);font-size:13px;margin-left:8px}
+.btn{padding:8px 16px;border-radius:6px;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:13px;font-family:inherit}
+.btn:hover{background:#f5f5f5}.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}.btn.small{padding:4px 10px;font-size:12px}
+.date-strip{display:flex;gap:4px;margin-bottom:14px;justify-content:center}
+.date-btn{flex:1;max-width:100px;padding:10px 6px;border-radius:10px;border:1px solid var(--grid-border);background:var(--card);cursor:pointer;text-align:center;font-family:inherit}
+.date-btn:hover{background:var(--accent-light)}.date-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.date-btn.today-btn{border-color:var(--accent);border-width:2px}
+.date-btn .dow{font-size:11px;opacity:0.7;display:block}.date-btn .day{font-size:15px;font-weight:600;display:block;margin-top:2px}
+.date-btn.active .dow,.date-btn.active .day{color:#fff;opacity:1}
+.toolbar{display:flex;gap:12px;align-items:center;margin-bottom:14px;background:var(--card);padding:10px 16px;border-radius:10px;border:1px solid var(--grid-border);justify-content:space-between;flex-wrap:wrap}
+.stats-bar{display:flex;gap:16px;font-size:12px;color:var(--muted)}
+.stat-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
+.week-grid{width:100%;border-collapse:collapse;border:none;border-radius:12px;overflow:hidden;table-layout:fixed}
+
+.time-label{font-size:16px;color:#000;text-align:center;vertical-align:middle;font-weight:600;background:#fafaf7;border-right:1px solid var(--grid-border);width:66px;padding:0;letter-spacing:-0.02em}
+.week-grid tbody td{overflow:hidden}.day-header{text-align:center;padding:10px 2px;font-size:12px;font-weight:600;border-bottom:1px solid #e8e6e0;border-right:none;background:#fafaf7;width:auto}
+.day-header.today{background:var(--accent-light)}
+.cell{min-height:6px;height:6px;padding:0;cursor:pointer;position:relative;border:none}
+.cell:hover{filter:brightness(0.96)}
+.cell-no-border{border:none!important}
+.cell-label{font-size:13px;font-weight:600;color:#fff;text-align:left;overflow:hidden}
+
+.appt{padding:1px 3px;border-radius:3px;font-size:8px;line-height:1.4;margin-bottom:1px;cursor:pointer;color:#fff;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,0.25)}
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.3);display:flex;justify-content:center;align-items:center;z-index:100}
+.modal{background:#fff;border-radius:12px;padding:24px;width:90%;max-width:420px;box-shadow:0 8px 40px rgba(0,0,0,0.15)}
+.modal h3{margin-bottom:16px;font-size:17px}.modal label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;margin-top:12px}
+.modal input,.modal select,.modal textarea{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:14px;font-family:inherit}
+.modal textarea{resize:vertical;min-height:60px}.modal .btns{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.conflict-warn{background:#fff3e0;color:#c4934a;padding:8px 12px;border-radius:6px;font-size:12px;margin-top:8px;display:none}
+.panel{background:var(--card);border-radius:10px;padding:20px;margin-top:16px;border:1px solid var(--grid-border)}
+.panel h3{font-size:15px;margin-bottom:12px}table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:8px 6px;border-bottom:2px solid #eee;font-size:12px;color:var(--muted)}
+td{padding:8px 6px;border-bottom:1px solid #f5f5f5}
+.tag{display:inline-block;padding:2px 8px;border-radius:3px;font-size:11px;color:#fff}
+.tag.fixed{background:var(--fixed)}.tag.new{background:var(--new)}.tag.course{background:var(--course)}.tag.lecture{background:var(--lecture)}.tag.other{background:var(--other)}
+.search-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:12px;padding:20px;width:90%;max-width:500px;max-height:70vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.2);z-index:9999;display:none}
+.search-result{padding:8px 10px;border-bottom:1px solid #eee;cursor:pointer;font-size:13px}.search-result:hover{background:var(--accent-light)}
+#greeting{text-align:center;padding:14px 0 16px}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+#greeting{animation:fadeIn .6s ease}
+@media(max-width:640px){.app{padding:6px}.week-grid .time-label{width:36px;font-size:10px}.time-label{font-size:10px;padding:2px}.day-header{font-size:10px;padding:6px 1px}.cell{height:5px}.date-btn{padding:6px 2px}}
+</style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4a7c65">
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<style>
+#loginOverlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);display:flex;justify-content:center;align-items:center;z-index:9999}
+#loginBox{background:#fff;border-radius:16px;padding:32px;width:90%;max-width:360px;box-shadow:0 8px 40px rgba(0,0,0,0.15);text-align:center}
+#loginBox h2{margin-bottom:8px;font-size:20px}
+#loginBox p{color:#8b8578;font-size:13px;margin-bottom:20px}
+#loginBox input{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:16px;text-align:center;margin-bottom:16px;font-family:inherit}
+#loginBox button{width:100%;padding:10px;background:#4a7c65;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer}
+#loginBox button:hover{background:#3d6b56}
+#loginBox .hint{font-size:11px;color:#bbb;margin-top:12px}
+#syncBanner{background:#eaf5ef;color:#4a7c65;padding:8px 16px;border-radius:8px;font-size:12px;margin-bottom:12px;display:none;align-items:center;justify-content:space-between}
+#syncBanner button{padding:4px 12px;background:#4a7c65;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="loginOverlay">
+  <div id="loginBox">
+    <h2>咨询师日程助手</h2>
+    <p>输入你的访问码，登录后数据自动同步到云端</p>
+    <input type="text" id="accessCodeInput" placeholder="输入访问码" autocomplete="off">
+    <button onclick="login()">登录 / 注册</button>
+    <div class="hint">首次输入任意码即可创建账号</div>
+  </div>
+</div>
+<div id="syncBanner"><span id="syncStatus">⬆ 有本地数据待上传</span><button onclick="syncLocalToCloud()">上传到云端</button></div>
+<div class="app">
+<header><div style="display:flex;align-items:center;gap:14px"><img src="icon_calendar.png" style="width:48px;height:48px;border-radius:10px;object-fit:cover;box-shadow:0 2px 8px rgba(0,0,0,0.1)"><h1>咨询师日程助手 <span>Counseling Calendar</span></h1></div>
+<div style="display:flex;gap:8px"><button class="btn" onclick="switchView('list')">来访列表</button><button class="btn" onclick="switchView('stats')">统计</button><button class="btn" onclick="exportData()">导出</button><button class="btn small" onclick="document.getElementById('importFile').click()">导入</button></div></header>
+<div id="greeting"><div style="font-size:16px;font-weight:600;color:var(--text)" id="greetingLine"></div><div style="font-size:13px;color:var(--muted);margin-top:4px" id="greetingSub"></div></div>
+<div class="date-strip" id="dateStrip"></div>
+<div class="toolbar"><select id="viewRange" onchange="switchRange()" style="padding:6px 10px;border-radius:6px;border:1px solid #ddd;font-size:13px;font-family:inherit"><option value="prev">上周</option><option value="week" selected>本周</option><option value="next">下周</option></select>
+<div style="display:flex;align-items:center;gap:6px"><input type="text" id="searchInput" placeholder="搜索姓名、备注…" style="padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;width:180px;font-family:inherit"><button class="btn primary small" onclick="doSearch()">搜索</button></div>
+<div class="stats-bar"><span><span class="stat-dot" style="background:var(--new)"></span>新来访</span><span><span class="stat-dot" style="background:var(--fixed)"></span>固定来访</span><span><span class="stat-dot" style="background:var(--course)"></span>课程安排</span><span><span class="stat-dot" style="background:var(--lecture)"></span>个体咨询</span><span><span class="stat-dot" style="background:var(--other)"></span>其他工作</span></div></div>
+<div id="weekView"><table class="week-grid" id="weekGrid"></table></div>
+<div id="listView" style="display:none"><div class="panel"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="margin:0">所有来访者</h3><button class="btn small" onclick="switchView('week')">返回日程</button></div><div id="clientList"></div></div></div>
+<div id="statsView" style="display:none"><div class="panel"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="margin:0">本周统计</h3><button class="btn small" onclick="switchView('week')">返回日程</button></div><div id="statsPanel"></div></div></div>
+<div id="dataView" style="display:none"><div class="panel"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="margin:0">数据管理</h3><button class="btn small" onclick="switchView('week')">返回日程</button></div>
+<div style="font-size:14px;line-height:2;">
+<p>当前数据 <strong id="dataCount">0</strong> 条记录</p>
+<p>存储位置：<strong>浏览器本地 (localStorage)</strong></p>
+<p style="font-size:12px;color:var(--muted);">数据仅保存在本设备浏览器中，不会上传到任何服务器。</p>
+<p style="font-size:12px;color:var(--muted);">建议定期「导出」备份，更换设备时「导入」恢复。</p>
+<hr style="margin:12px 0;border-color:#eee;">
+<button class="btn primary" onclick="exportData()">导出备份 JSON</button>
+<button class="btn" onclick="document.getElementById('importFile').click()">导入 JSON 恢复</button>
+<button class="btn" style="color:#c75b39;border-color:#c75b39;" onclick="if(confirm('确定清除所有数据？此操作不可恢复。')){appointments=[];save();switchView('week');}">清除所有数据</button>
+<br><br><label style="font-size:14px;cursor:pointer;"><input type="checkbox" id="autoBackupCheck" checked onchange="backupEnabled=this.checked"> 每次修改自动备份到下载文件夹</label>
+<p style="font-size:11px;color:var(--muted);">建议在 Chrome 设置中开启「下载前询问每个文件的保存位置」= 关闭<br>或设置固定下载路径，备份文件自动保存不会弹窗</p>
+</div></div></div>
+</div>
+<div class="modal-overlay" id="searchOverlay" style="display:none;z-index:199;background:rgba(0,0,0,0.15)" onclick="closeSearch()"></div>
+<div class="search-popup" id="searchPopup"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><h4 style="margin:0">搜索结果</h4><button class="btn small" onclick="closeSearch()">关闭</button></div><div id="searchResults"></div></div>
+<div class="modal-overlay" id="dayPopup" style="display:none" onclick="if(event.target===this)this.style.display='none'"><div class="modal" style="max-width:600px;padding:32px"><div id="popupTitle"></div><button class="btn small" onclick="document.getElementById('dayPopup').style.display='none'" style="margin-top:10px">关闭</button></div></div>
+<div class="modal-overlay" id="modalOverlay" style="display:none" onclick="if(event.target===this)closeModal()"><div class="modal" id="modal"><h3 id="modalTitle">添加日程</h3>
+<label>来访者姓名</label><input type="text" id="apptName" placeholder="例如：张三" onchange="autoFillBase()">
+<label>日期</label><input type="date" id="apptDate">
+<label>开始时间</label><input type="time" id="apptStart" value="09:00">
+<label>结束时间</label><input type="time" id="apptEnd" value="09:50">
+<label>类型</label><select id="apptType"><option value="new">新来访</option><option value="fixed">固定来访</option><option value="course">课程安排</option><option value="lecture">个体咨询</option><option value="other">其他工作</option></select>
+<label>历史咨询次数（基数）</label><input type="number" id="visitBase" value="0" min="0" style="width:100px;"><label>每周重复</label><select id="apptRecur"><option value="none">不重复</option><option value="1">每周重复一次</option></select>
+<label>备注</label><textarea id="apptNotes" placeholder="咨询主题、注意事项…"></textarea>
+<div class="conflict-warn" id="conflictWarn"></div>
+<div class="btns"><button class="btn" id="btnDelete" style="display:none;margin-right:auto;color:#c75b39;border-color:#c75b39" onclick="deleteAppt()">删除</button><button class="btn" onclick="closeModal()">取消</button><button class="btn primary" onclick="saveAppt()">保存</button></div></div></div>
+<input type="file" id="importFile" style="display:none" accept=".json" onchange="importData(event)">
+
+<script>
+// ===== Supabase 初始化 =====
+const { createClient } = supabase;
+const _supabase = createClient("https://qlszqstrmxofdtugxfbo.supabase.co", "sb_publishable_amUCZmB4e6Q5SDlQUxctNw_DQVK4riQ");
+var _accessCode = localStorage.getItem("counselor_access") || "";
+
+async function login() {
+  var code = document.getElementById("accessCodeInput").value.trim();
+  if (!code) return alert("请输入访问码");
+  _accessCode = code;
+  localStorage.setItem("counselor_access", code);
+  document.getElementById("loginOverlay").style.display = "none";
+  await loadFromCloud();
+  // 检查是否有本地数据需要迁移
+  var local = JSON.parse(localStorage.getItem("counselor_appts") || "[]");
+  if (local.length > 0 && local.some(function(a){ return !a._synced })) {
+    document.getElementById("syncBanner").style.display = "flex";
+  }
+}
+
+// 页面加载时检查是否已登录
+(function(){
+  var saved = localStorage.getItem("counselor_access");
+  if (saved) {
+    _accessCode = saved;
+    document.getElementById("loginOverlay").style.display = "none";
+    loadFromCloud();
+  }
+})();
+
+async function loadFromCloud() {
+  if (!_accessCode) return;
+  try {
+    var { data, error } = await _supabase
+      .from("appointments")
+      .select("*")
+      .eq("access_code", _accessCode);
+    if (error) throw error;
+    if (data && data.length > 0) {
+      // 转成appointments格式
+      var cloud = data.map(function(r){ return {
+        id: r.appt_id, name: r.client_name, date: r.date,
+        start: r.time ? r.time.split("-")[0] : "09:00",
+        end: r.time ? r.time.split("-")[1] : "09:50",
+        type: r.type || "new", notes: r.notes || "",
+        visitBase: 0, recurring: "none", _synced: true,
+        createdAt: r.created_at
+      };});
+      // 合并云端和本地
+      var local = JSON.parse(localStorage.getItem("counselor_appts") || "[]");
+      var cloudIds = {}; cloud.forEach(function(a){ cloudIds[a.id] = true; });
+      // 本地上传未同步的
+      var unsynced = local.filter(function(a){ return !a._synced && !cloudIds[a.id]; });
+      for (var i=0; i<unsynced.length; i++) {
+        await saveToCloud(unsynced[i]);
+      }
+      appointments = cloud;
+      localStorage.setItem("counselor_appts", JSON.stringify(appointments));
+      renderGreeting(); renderDateStrip(); renderWeek();
+    }
+  } catch(e) { console.log("云同步失败，使用本地数据:", e.message); }
+}
+
+async function saveToCloud(appt) {
+  try {
+    var timeStr = (appt.start || "09:00") + "-" + (appt.end || "09:50");
+    var { error } = await _supabase.from("appointments").upsert({
+      access_code: _accessCode,
+      appt_id: appt.id,
+      date: appt.date,
+      time: timeStr,
+      client_name: appt.name || "",
+      phone: "",
+      type: appt.type || "new",
+      notes: appt.notes || ""
+    }, { onConflict: "appt_id" });
+    if (error) throw error;
+    appt._synced = true;
+  } catch(e) { console.log("云端保存失败:", e.message); }
+}
+
+async function syncLocalToCloud() {
+  var local = JSON.parse(localStorage.getItem("counselor_appts") || "[]");
+  if (!local.length) { document.getElementById("syncBanner").style.display = "none"; return; }
+  document.getElementById("syncStatus").textContent = "⏳ 上传中...";
+  var count = 0;
+  for (var i=0; i<local.length; i++) {
+    if (!local[i]._synced) { await saveToCloud(local[i]); count++; }
+  }
+  localStorage.setItem("counselor_appts", JSON.stringify(local));
+  document.getElementById("syncStatus").textContent = "✅ 已上传 " + count + " 条";
+  setTimeout(function(){ document.getElementById("syncBanner").style.display = "none"; }, 2000);
+}
+
+// 重写save函数
+var _origSave = save;
+save = function() {
+  _origSave();
+  var a = appointments;
+  localStorage.setItem("counselor_appts", JSON.stringify(a));
+  if (_accessCode) {
+    for (var i=0; i<a.length; i++) {
+      if (!a[i]._synced) { saveToCloud(a[i]); }
+    }
+  }
+};
+</script>
+
+<script>
+const TOTAL_SLOTS=168;function slotToTime(idx){var m=8*60+idx*5;return String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0");}function timeToSlot(t){var p=t.split(":"),h=parseInt(p[0]),m=parseInt(p[1]);return (h-8)*12+Math.floor(m/5);}
+const DAYS=["周一","周二","周三","周四","周五","周六","周日"];
+const LABS={fixed:"固定来访",new:"新来访",course:"课程安排",lecture:"个体咨询",other:"其他工作"};
+var appointments=JSON.parse(localStorage.getItem("counselor_appts")||"[]");
+var editingId=null,weekStart=getWeekStart(new Date()),selectedDay=fmtDate(new Date()),weekOffset=0;
+
+function getWeekStart(d){var c=new Date(d.getFullYear(),d.getMonth(),d.getDate()),dow=c.getDay(),offset=dow===0?6:dow-1;c.setDate(c.getDate()-offset);return c}
+function fmtDate(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function fmtTimeStr(h){var hr=Math.floor(h);return String(hr).padStart(2,"0")+":"+(h%1===0.5?"30":"00")}
+function getApptsForDay(ds){return appointments.filter(function(a){return a.date===ds}).sort(function(a,b){return a.start.localeCompare(b.start)})}
+
+// Greeting
+function renderGreeting(){
+  var dow=new Date().getDay(),g={1:["周一，请加油","新的一周，从善待自己开始"],2:["周二，稳扎稳打","你已经进入节奏了"],3:["周三，过半啦","坚持是一件很酷的事"],4:["周四，渐入佳境","用心倾听的你，值得被感谢"],5:["周五，快周末了","这一周的付出，都会被看见"],6:["周末了，请尽量放松","照顾好自己，才能更好地陪伴他人"],0:["周日，安静地充电","给自己一点空间，比什么都重要"]}[dow];
+  document.getElementById("greetingLine").textContent=g[0];
+  document.getElementById("greetingSub").textContent=g[1];
+}
+
+// Date strip
+function renderDateStrip(){
+  var today=fmtDate(new Date()),strip=document.getElementById("dateStrip"),html="";
+  for(var i=0;i<7;i++){var d=new Date(weekStart);d.setDate(d.getDate()+i);var ds=fmtDate(d),isToday=ds===today,isActive=ds===selectedDay,m=d.getMonth()+1,day=d.getDate(),dow=DAYS[d.getDay()===0?6:d.getDay()-1];
+  html+='<button class="date-btn'+(isActive?" active":"")+(isToday?" today-btn":"")+'" onclick="selectDay(\''+ds+'\')"><span class="dow">'+dow+'</span><span class="day">'+m+'.'+day+'</span></button>';}
+  strip.innerHTML=html;
+}
+function selectDay(ds){selectedDay=ds;renderDateStrip();showDayPopup(ds);}
+
+// Day popup
+function showDayPopup(ds){
+  var appts=getApptsForDay(ds),d=new Date(ds.replace(/-/g,"/")),dow=DAYS[d.getDay()===0?6:d.getDay()-1],msg='<h3 style="font-size:20px;margin-bottom:12px;">'+ds+" "+dow+'</h3>';
+  if(appts.length===0){msg+='<p style="color:var(--muted);">暂无日程安排</p>';}
+  else{msg+='<div style="max-height:300px;overflow-y:auto;">';
+    for(var i=0;i<appts.length;i++){var a=appts[i],cnt=0;
+      for(var k=0;k<appointments.length;k++){if(appointments[k].name===a.name&&appointments[k].date<=a.date)cnt++;}
+      msg+='<div style="padding:12px 0;border-bottom:1px solid #eee;font-size:16px;"><b>'+a.start+"-"+a.end+'</b> <span class="tag '+a.type+'">'+LABS[a.type]+'</span> <strong>'+a.name+'</strong>'+(cnt>1?" ("+cnt+")":"")+(a.notes?'<br><span style="color:var(--muted);font-size:12px;">'+a.notes.slice(0,60)+'</span>':'')+'</div>';}
+    msg+='</div>';}
+  msg+='<p style="margin-top:14px;font-size:14px;color:var(--muted);">共 '+appts.length+' 个日程</p>';
+  document.getElementById("popupTitle").innerHTML=msg;
+  document.getElementById("dayPopup").style.display="flex";
+}
+
+// Week navigation
+function switchRange(){
+  var sel=document.getElementById("viewRange");
+  var v=sel.value;
+  if(v==="prev")weekOffset=-1;else if(v==="next")weekOffset=1;else weekOffset=0;
+  weekStart=getWeekStart(new Date());weekStart.setDate(weekStart.getDate()+weekOffset*7);
+  renderDateStrip();renderWeek();
+}
+
+// Render week grid
+function renderWeek(){
+  var grid=document.getElementById("weekGrid"),today=fmtDate(new Date());
+  var dayData=[];
+  for(var i=0;i<7;i++){var d=new Date(weekStart);d.setDate(d.getDate()+i);var ds=fmtDate(d),appts=getApptsForDay(ds),slots={},cur=null,curAppt=null;
+    for(var si=0;si<TOTAL_SLOTS;si++){var appt=null;
+      for(var ai=0;ai<appts.length;ai++){var a=appts[ai];if(timeToSlot(a.start)===si){appt=a;break;}}
+      // Clear cur if current appointment ends at this slot
+      if(curAppt&&si>=timeToSlot(curAppt.end)){cur=null;curAppt=null;}
+      if(appt){cur=appt.type;curAppt=appt;}
+      slots[si]={type:cur,appt:curAppt};}
+    dayData.push({ds:ds,appts:appts,slots:slots});}
+
+  var html="<thead><tr><th style=\'background:#fafaf7;width:66px;\'></th>";
+  for(var i=0;i<7;i++){var d=new Date(weekStart);d.setDate(d.getDate()+i);var ds=fmtDate(d),isToday=ds===today;
+    html+="<th class=\'day-header"+(isToday?" today":"")+"\' style=\'"+(isToday?"background:var(--accent-light);":"")+"\'>"+DAYS[d.getDay()===0?6:d.getDay()-1]+"<br><span class=\'date\'>"+ds.slice(5)+"</span></th>";}
+  html+="</tr></thead><tbody>";
+
+  for(var h=8;h<22;h++){
+    for(var sub=0;sub<12;sub++){
+      var si=(h-8)*12+sub;
+      html+="<tr>";
+      if(sub===0){
+        html+="<td class=\'time-label\' rowspan=\'12\'>"+String(h).padStart(2,"0")+":00</td>";
+      }
+      for(var i=0;i<7;i++){
+        var dd=dayData[i],slot=dd.slots[si],bgType=slot.type,appt=slot.appt;
+        // Check if this is the first slot of this appointment
+        var prevAppt=(si>0?dd.slots[si-1].appt:null);
+        var isFirstSlot=(appt&&appt!==prevAppt);
+        var isLastSlot=false;
+        if(appt){var nextSlot=(si+1<TOTAL_SLOTS?dd.slots[si+1]:null);isLastSlot=(!nextSlot||nextSlot.appt!==appt);}
+        var prevType=(si>0?dd.slots[si-1].type:null);
+        var isTypeStart=(bgType&&bgType!==prevType);
+
+        var bg=bgType?"background:var(--"+bgType+");":"";
+        
+        var apptId=(slot.appt?slot.appt.id:"");html+="<td class=\'cell"+(appt?" has-appt":"")+"\' style=\'"+bg+"\' data-apptid=\'"+apptId+"\' onclick=\'cellClick(event,this,\""+dd.ds+"\",\""+slotToTime(si)+"\",\""+slotToTime(si+1)+"\")\'";
+        
+        if(isFirstSlot&&appt){
+          var base=appt.visitBase||0;var cnt=base;for(var k=0;k<appointments.length;k++){if(appointments[k].name===appt.name&&appointments[k].date<=appt.date)cnt++;}
+          var noteText=appt.notes?(appt.notes.length>20?appt.notes.slice(0,20)+'...':appt.notes):'';html+="><div class=\'cell-label\' style=\'display:flex;flex-direction:column;justify-content:center;height:100%;cursor:text;padding:2px 8px;\'><div><span style=\'font-weight:700;\'>"+appt.name+(cnt>1?"("+cnt+")":"")+"</span><span style=\'font-size:11px;opacity:0.65;margin-left:6px;\'>"+appt.start+"-"+appt.end+"</span></div>"+(noteText?"<div style=\'font-size:11px;opacity:0.8;margin-top:2px;\'>"+noteText+"</div>":"")+"</div></td>";
+        }else{
+          html+="></td>";
+        }
+      }
+      html+="</tr>";
+    }
+  }
+  html+="</tbody>";
+  grid.innerHTML=html;
+}
+
+// Modal
+
+// Modal
+
+// Modal
+
+// Modal
+
+// Modal// Modal
+function openSlot(date,start,end){
+  editingId=null;document.getElementById("modalTitle").textContent="添加日程";
+  document.getElementById("apptName").value="";document.getElementById("apptDate").value=date;
+  document.getElementById("apptStart").value=start;document.getElementById("apptEnd").value=end;
+  document.getElementById("apptType").value="fixed";document.getElementById("apptRecur").value="none";
+  document.getElementById("apptNotes").value="";document.getElementById("visitBase").value="0";document.getElementById("btnDelete").style.display="none";
+  document.getElementById("conflictWarn").style.display="none";
+  document.getElementById("modalOverlay").style.display="flex";
+}
+function editAppt(id){
+  var a=appointments.find(function(x){return x.id===id});if(!a)return;editingId=id;
+  document.getElementById("modalTitle").textContent="编辑日程";
+  document.getElementById("apptName").value=a.name;document.getElementById("apptDate").value=a.date;
+  document.getElementById("apptStart").value=a.start;document.getElementById("apptEnd").value=a.end;
+  document.getElementById("apptType").value=a.type;document.getElementById("apptRecur").value=a.recurring||"none";
+  document.getElementById("apptNotes").value=a.notes||"";document.getElementById("visitBase").value=a.visitBase||0;document.getElementById("btnDelete").style.display="block";
+  document.getElementById("conflictWarn").style.display="none";
+  document.getElementById("modalOverlay").style.display="flex";
+}
+function autoFillBase(){
+  var name=document.getElementById("apptName").value.trim();
+  if(!name)return;
+  var existing=appointments.filter(function(a){return a.name===name});
+  if(existing.length>0){
+    var maxBase=0;existing.forEach(function(a){if((a.visitBase||0)>maxBase)maxBase=a.visitBase||0;});
+    document.getElementById("visitBase").value=maxBase;
+  }
+}
+function saveAppt(){
+  var name=document.getElementById("apptName").value.trim(),date=document.getElementById("apptDate").value,start=document.getElementById("apptStart").value,end=document.getElementById("apptEnd").value,type=document.getElementById("apptType").value,recur=document.getElementById("apptRecur").value,notes=document.getElementById("apptNotes").value.trim();
+  if(!name||!date||!start||!end)return alert("请填写完整");if(start>=end)return alert("结束时间必须晚于开始时间");
+  var visitBase=parseInt(document.getElementById("visitBase").value)||0;var recurring=document.getElementById("apptRecur").value;var appt={id:editingId||"a"+Date.now(),name:name,date:date,start:start,end:end,type:type,notes:notes,visitBase:visitBase,recurring:recurring,createdAt:new Date().toISOString()},toSave=[appt];
+  if(!editingId&&recur!=="none"&&recur!=="0"){
+    var count=parseInt(recur);if(isNaN(count))count=1;
+    for(var w=1;w<=count;w++){
+      var parts=date.split("-");var nd=new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]));
+      nd.setDate(nd.getDate()+w*7);
+      var newDate=fmtDate(nd);
+      toSave.push({id:"a"+Date.now()+"_"+w,name:name,date:newDate,start:start,end:end,type:type,notes:notes,visitBase:visitBase,recurring:"none",createdAt:new Date().toISOString()});
+    }
+  }
+  if(editingId)appointments=appointments.filter(function(a){return a.id!==editingId});
+  appointments.push.apply(appointments,toSave);save();closeModal();
+}
+function deleteAppt(){if(!editingId)return;if(!confirm("确定删除？"))return;appointments=appointments.filter(function(a){return a.id!==editingId});save();closeModal();}
+function save(){localStorage.setItem("counselor_appts",JSON.stringify(appointments));renderWeek();}
+function closeModal(){document.getElementById("modalOverlay").style.display="none";editingId=null;}
+var editingInline=null;
+function inlineEdit(el,id){
+  if(editingInline)return;
+  // Find the label div inside td
+  var label=el.querySelector(".cell-label");
+  if(!label)label=el;
+  el=label;
+  if(editingInline)return;
+  editingInline=id;
+  var a=appointments.find(function(x){return x.id===id});if(!a)return;
+  var orig=a.notes||"";
+  el.contentEditable=true;el.focus();
+  // Select all text
+  var range=document.createRange();range.selectNodeContents(el);var sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);
+  el.addEventListener("blur",function handler(){
+    el.contentEditable=false;editingInline=null;el.removeEventListener("blur",handler);
+    var txt=el.textContent.trim();
+    a.notes=txt;save();
+  });
+  el.addEventListener("keydown",function handler2(e){
+    if(e.key==="Enter"){e.preventDefault();el.blur();el.removeEventListener("keydown",handler2);}
+    if(e.key==="Escape"){el.textContent=orig;el.blur();el.removeEventListener("keydown",handler2);}
+  });
+}
+
+// Search
+function closeSearch(){document.getElementById("searchPopup").style.display="none";document.getElementById("searchOverlay").style.display="none";}
+var clickTimer=null;
+function cellClick(e,td,ds,start,end){
+  if(clickTimer){clearTimeout(clickTimer);clickTimer=null;
+    // Double click - inline edit
+    var aid=td.getAttribute("data-apptid");
+    if(aid&&aid!==""){inlineEdit(td,aid);}
+    return;
+  }
+  var aid=td.getAttribute("data-apptid");
+  if(aid&&aid!==""){clickTimer=setTimeout(function(){clickTimer=null;editAppt(aid);},300);}
+  else{clickTimer=setTimeout(function(){clickTimer=null;openSlot(ds,start,end);},300);}
+}
+function doSearch(){
+  var q=document.getElementById("searchInput").value.trim().toLowerCase();if(!q){closeSearch();return;}
+  var results=[];
+  for(var i=0;i<appointments.length;i++){var a=appointments[i];if(a.name.toLowerCase().indexOf(q)!==-1||(a.notes||"").toLowerCase().indexOf(q)!==-1)results.push(a);}
+  results.sort(function(a,b){return b.date.localeCompare(a.date);});
+  var ph='<p style="font-size:12px;color:var(--muted);margin-bottom:8px;">找到 '+results.length+' 条 / 共 '+appointments.length+' 条</p>';
+  if(results.length===0){ph='<p style="padding:20px;text-align:center;color:var(--muted);">未找到【'+q+'】</p>';}
+  else{for(var j=0;j<results.length;j++){var r=results[j],cnt=0;for(var k=0;k<appointments.length;k++){if(appointments[k].name===r.name&&appointments[k].date<=r.date)cnt++;}
+    ph+='<div class="search-result" onclick="editAppt(\''+r.id+'\');closeSearch();"><div style="display:flex;justify-content:space-between;"><strong>'+r.name+'</strong><span style="font-size:11px;color:var(--muted);">第'+cnt+'次</span></div><div style="font-size:12px;margin-top:2px;">'+r.date+" "+r.start+"-"+r.end+' <span class="tag '+r.type+'">'+LABS[r.type]+'</span></div>'+(r.notes?'<div style="font-size:12px;color:var(--muted);margin-top:2px;">'+r.notes.slice(0,60)+'</div>':'')+'</div>';}}
+  document.getElementById("searchResults").innerHTML=ph;
+  document.getElementById("searchPopup").style.display="block";
+  document.getElementById("searchOverlay").style.display="block";
+}
+
+// Views
+function switchView(view){
+  document.getElementById("weekView").style.display=(view==="week")?"block":"none";
+  document.getElementById("listView").style.display=(view==="list")?"block":"none";
+  document.getElementById("statsView").style.display=(view==="stats")?"block":"none";
+  if(view==="list")renderList();if(view==="stats")renderStats();
+}
+function renderList(){
+  var clients={};appointments.forEach(function(a){if(!clients[a.name])clients[a.name]=[];clients[a.name].push(a);});
+  var names=Object.keys(clients).sort(),h='<table><tr><th>姓名</th><th>次数</th><th>最近一次</th><th>类型</th><th>备注</th></tr>';
+  for(var i=0;i<names.length;i++){var name=names[i],appts=clients[name].sort(function(a,b){return b.date.localeCompare(a.date);}),last=appts[0],tc={};appts.forEach(function(a){tc[a.type]=(tc[a.type]||0)+1;});
+    var tags="";for(var t in tc){tags+='<span class="tag '+t+'">'+LABS[t]+(tc[t]>1?" x"+tc[t]:"")+"</span> ";}
+    h+='<tr><td><strong>'+name+'</strong></td><td>'+appts.length+'</td><td>'+last.date+'</td><td>'+tags+'</td><td style="font-size:12px;color:var(--muted);">'+(last.notes||"").slice(0,30)+'</td></tr>';}
+  h+='</table>';if(names.length===0)h='<p style="color:var(--muted);">暂无来访记录</p>';
+  document.getElementById("clientList").innerHTML=h;
+}
+function renderStats(){
+  document.getElementById('dataCount').textContent=appointments.length;
+  var mon=fmtDate(weekStart),sun=new Date(weekStart);sun.setDate(sun.getDate()+6);var sunStr=fmtDate(sun),weekAppts=appointments.filter(function(a){return a.date>=mon&&a.date<=sunStr;}),count={fixed:0,new:0,course:0,lecture:0,other:0},total=0;
+  weekAppts.forEach(function(a){if(count[a.type]!==undefined)count[a.type]++;});
+  Object.keys(count).forEach(function(k){total+=count[k];});
+  var h='<p style="margin-bottom:16px;">本周共 <strong>'+total+'</strong> 个日程</p><table><tr><th>类型</th><th>数量</th><th>占比</th></tr>';
+  Object.keys(count).forEach(function(type){h+='<tr><td><span class="stat-dot" style="background:var(--'+type+');"></span>'+LABS[type]+'</td><td>'+count[type]+' 人次</td><td>'+(total?Math.round(count[type]/total*100):0)+'%</td></tr>';});
+  h+='</table>';var uniq=new Set(weekAppts.map(function(a){return a.name;}));
+  h+='<p style="margin-top:16px;">本周服务：<strong>'+uniq.size+'</strong> 人</p>';
+  document.getElementById("statsPanel").innerHTML=h;
+}
+function exportData(){var b=new Blob([JSON.stringify(appointments,null,2)],{type:"application/json"});var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="日程_"+fmtDate(new Date())+".json";a.click();}
+function importData(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(ev){try{var d=JSON.parse(ev.target.result);if(!Array.isArray(d))throw new Error("");if(confirm("导入 "+d.length+" 条？")){appointments=d;save();}}catch(err){alert("格式错误");}};r.readAsText(f);e.target.value="";}
+
+// Init
+(function(){
+  var si=document.getElementById("searchInput");
+  if(si){si.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();doSearch();}});}
+})();
+var APP_VERSION=1;
+(function migrate(){
+  var storedVer=parseInt(localStorage.getItem('counselor_version')||'0');
+  if(storedVer<APP_VERSION){
+    // Auto-backup old data before migration
+    var old=localStorage.getItem('counselor_appts');
+    if(old){
+      try{
+        var data=JSON.parse(old);
+        var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+        var url=URL.createObjectURL(blob);
+        var a=document.createElement('a');
+        a.href=url;a.download='咨询日程_升级前备份_v'+storedVer+'.json';
+        document.body.appendChild(a);a.click();document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }catch(e){}
+    }
+    localStorage.setItem('counselor_version',APP_VERSION);
+    console.log('Migrated from v'+storedVer+' to v'+APP_VERSION);
+  }
+})();
+renderGreeting();renderDateStrip();renderWeek();
+
+// Service Worker 注册
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('sw.js').then(function(reg) {
+      console.log('[SW] 注册成功，scope:', reg.scope);
+    }, function(err) {
+      console.warn('[SW] 注册失败:', err.message);
+    });
+  });
+}
+</script>
+</body>
+</html>
