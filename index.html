@@ -259,10 +259,10 @@ function selectDay(ds){selectedDay=ds;renderDateStrip();showDayPopup(ds);}
 function showDayPopup(ds){
   var appts=getApptsForDay(ds),d=new Date(ds.replace(/-/g,"/")),dow=DAYS[d.getDay()===0?6:d.getDay()-1],msg='<h3 style="font-size:20px;margin-bottom:12px;">'+ds+" "+dow+'</h3>';
   if(appts.length===0){msg+='<p style="color:var(--muted);">暂无日程安排</p>';}
-  else{msg+='<div style="max-height:300px;overflow-y:auto;">';
+  else{msg+='<div style="max-height:300px;overflow-y:auto;text-align:center;">';
     for(var i=0;i<appts.length;i++){var a=appts[i],cnt=0;
       for(var k=0;k<appointments.length;k++){if(appointments[k].name===a.name&&appointments[k].date<=a.date)cnt++;}
-      msg+='<div style="padding:12px 0;border-bottom:1px solid #eee;font-size:16px;"><b>'+a.start+"-"+a.end+'</b> <span class="tag '+a.type+'">'+LABS[a.type]+'</span> <strong>'+a.name+'</strong>'+(cnt>1?" ("+cnt+")":"")+(a.notes?'<br><span style="color:var(--muted);font-size:12px;">'+a.notes.slice(0,60)+'</span>':'')+'</div>';}
+      msg+='<div style="padding:12px 0;border-bottom:1px solid #eee;font-size:16px;text-align:center;"><b>'+a.start+"-"+a.end+'</b> <span class="tag '+a.type+'">'+LABS[a.type]+'</span> <strong>'+a.name+'</strong>'+(cnt>1?" ("+cnt+")":"")+(a.notes?'<br><span style="color:var(--muted);font-size:12px;">'+a.notes.slice(0,60)+'</span>':'')+'</div>';}
     msg+='</div>';}
   msg+='<p style="margin-top:14px;font-size:14px;color:var(--muted);">共 '+appts.length+' 个日程</p>';
   document.getElementById("popupTitle").innerHTML=msg;
